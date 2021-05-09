@@ -7,6 +7,7 @@ use tokio::io::AsyncReadExt as _;
 pub struct Config {
     pub email: Option<String>,
     pub base_url: Option<String>,
+    pub root_certificate: Option<String>,
     pub identity_url: Option<String>,
     #[serde(default = "default_lock_timeout")]
     pub lock_timeout: u64,
@@ -22,6 +23,7 @@ impl Default for Config {
             identity_url: Default::default(),
             lock_timeout: default_lock_timeout(),
             pinentry: default_pinentry(),
+            root_certificate: Default::default(),
         }
     }
 }
@@ -127,6 +129,13 @@ impl Config {
         self.base_url.clone().map_or_else(
             || "https://api.bitwarden.com".to_string(),
             |url| format!("{}/api", url.trim_end_matches('/')),
+        )
+    }
+
+    pub fn root_certificate(&self) -> String {
+        self.root_certificate.clone().map_or_else(
+            || "null".to_string(),
+            |cert| cert,
         )
     }
 

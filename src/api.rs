@@ -1,4 +1,7 @@
 use crate::prelude::*;
+use std::fs::File;
+use std::io::Read;
+use std::str;
 
 use crate::json::{
     DeserializeJsonWithPath as _, DeserializeJsonWithPathAsync as _,
@@ -547,21 +550,64 @@ struct FoldersPostReq {
 pub struct Client {
     base_url: String,
     identity_url: String,
+    root_certificate: String,
 }
 
 impl Client {
-    pub fn new(base_url: &str, identity_url: &str) -> Self {
+    pub fn new(base_url: &str, identity_url: &str, root_certificate: &str) -> Self {
         Self {
             base_url: base_url.to_string(),
             identity_url: identity_url.to_string(),
+            root_certificate: root_certificate.to_string(),
         }
+    }
+
+    fn new_client_with_root_cert(&self) -> Result<reqwest::Client> {
+        let mut buf = Vec::new();
+        File::open(&self.root_certificate)
+            .expect("root_certificate not found")
+            .read_to_end(&mut buf)
+            .expect("root_certificate is corrupt");
+
+        let cert = reqwest::Certificate::from_der(&buf)
+            .expect("root_certificate is invalid");
+
+        let client = reqwest::Client::builder()
+            .add_root_certificate(cert)
+            .build()
+            .expect("apply root_certificate failed");
+
+        Ok(client)
+    }
+
+    fn new_blocking_client_with_root_cert(&self) -> Result<reqwest::blocking::Client> {
+        let mut buf = Vec::new();
+        File::open(&self.root_certificate)
+            .expect("root_certificate not found")
+            .read_to_end(&mut buf)
+            .expect("root_certificate is corrupt");
+
+        let cert = reqwest::Certificate::from_der(&buf)
+            .expect("root_certificate is invalid");
+
+        let client = reqwest::blocking::Client::builder()
+            .add_root_certificate(cert)
+            .build()
+            .expect("appy root_certificate failed");
+
+        Ok(client)
     }
 
     pub async fn prelogin(&self, email: &str) -> Result<u32> {
         let prelogin = PreloginReq {
             email: email.to_string(),
         };
-        let client = reqwest::Client::new();
+
+        let client = match &self.root_certificate {
+            x if x.trim().is_empty() => reqwest::Client::new(),
+            _ => self.new_client_with_root_cert().unwrap(),
+        };
+
         let res = client
             .post(&self.api_url("/accounts/prelogin"))
             .json(&prelogin)
@@ -595,7 +641,12 @@ impl Client {
                 .map(std::string::ToString::to_string),
             two_factor_provider: two_factor_provider.map(|ty| ty as u32),
         };
-        let client = reqwest::Client::new();
+
+        let client = match &self.root_certificate {
+            x if x.trim().is_empty() => reqwest::Client::new(),
+            _ => self.new_client_with_root_cert().unwrap(),
+        };
+
         let res = client
             .post(&self.identity_url("/connect/token"))
             .form(&connect_req)
@@ -625,7 +676,12 @@ impl Client {
         std::collections::HashMap<String, String>,
         Vec<crate::db::Entry>,
     )> {
-        let client = reqwest::Client::new();
+
+        let client = match &self.root_certificate {
+            x if x.trim().is_empty() => reqwest::Client::new(),
+            _ => self.new_client_with_root_cert().unwrap(),
+        };
+
         let res = client
             .get(&self.api_url("/sync"))
             .header("Authorization", format!("Bearer {}", access_token))
@@ -767,7 +823,12 @@ impl Client {
                 req.secure_note = Some(CipherSecureNote {});
             }
         }
-        let client = reqwest::blocking::Client::new();
+
+        let client = match &self.root_certificate {
+            x if x.trim().is_empty() => reqwest::blocking::Client::new(),
+            _ => self.new_blocking_client_with_root_cert().unwrap(),
+        };
+
         let res = client
             .post(&self.api_url("/ciphers"))
             .header("Authorization", format!("Bearer {}", access_token))
@@ -900,7 +961,12 @@ impl Client {
                 req.secure_note = Some(CipherSecureNote {});
             }
         }
-        let client = reqwest::blocking::Client::new();
+
+        let client = match &self.root_certificate {
+            x if x.trim().is_empty() => reqwest::blocking::Client::new(),
+            _ => self.new_blocking_client_with_root_cert().unwrap(),
+        };
+
         let res = client
             .put(&self.api_url(&format!("/ciphers/{}", id)))
             .header("Authorization", format!("Bearer {}", access_token))
@@ -919,7 +985,12 @@ impl Client {
     }
 
     pub fn remove(&self, access_token: &str, id: &str) -> Result<()> {
-        let client = reqwest::blocking::Client::new();
+
+        let client = match &self.root_certificate {
+            x if x.trim().is_empty() => reqwest::blocking::Client::new(),
+            _ => self.new_blocking_client_with_root_cert().unwrap(),
+        };
+
         let res = client
             .delete(&self.api_url(&format!("/ciphers/{}", id)))
             .header("Authorization", format!("Bearer {}", access_token))
@@ -940,7 +1011,12 @@ impl Client {
         &self,
         access_token: &str,
     ) -> Result<Vec<(String, String)>> {
-        let client = reqwest::blocking::Client::new();
+
+        let client = match &self.root_certificate {
+            x if x.trim().is_empty() => reqwest::blocking::Client::new(),
+            _ => self.new_blocking_client_with_root_cert().unwrap(),
+        };
+
         let res = client
             .get(&self.api_url("/folders"))
             .header("Authorization", format!("Bearer {}", access_token))
@@ -972,7 +1048,13 @@ impl Client {
         let req = FoldersPostReq {
             name: name.to_string(),
         };
-        let client = reqwest::blocking::Client::new();
+
+
+        let client = match &self.root_certificate {
+            x if x.trim().is_empty() => reqwest::blocking::Client::new(),
+            _ => self.new_blocking_client_with_root_cert().unwrap(),
+        };
+
         let res = client
             .post(&self.api_url("/folders"))
             .header("Authorization", format!("Bearer {}", access_token))
@@ -1002,7 +1084,12 @@ impl Client {
             client_id: "desktop".to_string(),
             refresh_token: refresh_token.to_string(),
         };
-        let client = reqwest::blocking::Client::new();
+
+        let client = match &self.root_certificate {
+            x if x.trim().is_empty() => reqwest::blocking::Client::new(),
+            _ => self.new_blocking_client_with_root_cert().unwrap(),
+        };
+
         let res = client
             .post(&self.identity_url("/connect/token"))
             .form(&connect_req)
@@ -1021,7 +1108,12 @@ impl Client {
             client_id: "desktop".to_string(),
             refresh_token: refresh_token.to_string(),
         };
-        let client = reqwest::Client::new();
+
+        let client = match &self.root_certificate {
+            x if x.trim().is_empty() => reqwest::Client::new(),
+            _ => self.new_client_with_root_cert().unwrap(),
+        };
+
         let res = client
             .post(&self.identity_url("/connect/token"))
             .form(&connect_req)

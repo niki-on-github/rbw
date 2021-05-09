@@ -8,7 +8,7 @@ pub async fn login(
 ) -> Result<(String, String, u32, String, crate::locked::Keys)> {
     let config = crate::config::Config::load_async().await?;
     let client =
-        crate::api::Client::new(&config.base_url(), &config.identity_url());
+        crate::api::Client::new(&config.base_url(), &config.identity_url(), &config.root_certificate());
 
     let iterations = client.prelogin(email).await?;
     let identity =
@@ -116,7 +116,7 @@ async fn sync_once(
 )> {
     let config = crate::config::Config::load_async().await?;
     let client =
-        crate::api::Client::new(&config.base_url(), &config.identity_url());
+        crate::api::Client::new(&config.base_url(), &config.identity_url(), &config.root_certificate());
     client.sync(access_token).await
 }
 
@@ -142,7 +142,7 @@ fn add_once(
 ) -> Result<()> {
     let config = crate::config::Config::load()?;
     let client =
-        crate::api::Client::new(&config.base_url(), &config.identity_url());
+        crate::api::Client::new(&config.base_url(), &config.identity_url(), &config.root_certificate());
     client.add(access_token, name, data, notes, folder_id.as_deref())?;
     Ok(())
 }
@@ -184,7 +184,7 @@ fn edit_once(
 ) -> Result<()> {
     let config = crate::config::Config::load()?;
     let client =
-        crate::api::Client::new(&config.base_url(), &config.identity_url());
+        crate::api::Client::new(&config.base_url(), &config.identity_url(), &config.root_certificate());
     client.edit(
         access_token,
         id,
@@ -211,7 +211,7 @@ pub fn remove(
 fn remove_once(access_token: &str, id: &str) -> Result<()> {
     let config = crate::config::Config::load()?;
     let client =
-        crate::api::Client::new(&config.base_url(), &config.identity_url());
+        crate::api::Client::new(&config.base_url(), &config.identity_url(), &config.root_certificate());
     client.remove(access_token, id)?;
     Ok(())
 }
@@ -228,7 +228,7 @@ pub fn list_folders(
 fn list_folders_once(access_token: &str) -> Result<Vec<(String, String)>> {
     let config = crate::config::Config::load()?;
     let client =
-        crate::api::Client::new(&config.base_url(), &config.identity_url());
+        crate::api::Client::new(&config.base_url(), &config.identity_url(), &config.root_certificate());
     client.folders(access_token)
 }
 
@@ -245,7 +245,7 @@ pub fn create_folder(
 fn create_folder_once(access_token: &str, name: &str) -> Result<String> {
     let config = crate::config::Config::load()?;
     let client =
-        crate::api::Client::new(&config.base_url(), &config.identity_url());
+        crate::api::Client::new(&config.base_url(), &config.identity_url(), &config.root_certificate());
     client.create_folder(access_token, name)
 }
 
@@ -297,13 +297,13 @@ where
 fn exchange_refresh_token(refresh_token: &str) -> Result<String> {
     let config = crate::config::Config::load()?;
     let client =
-        crate::api::Client::new(&config.base_url(), &config.identity_url());
+        crate::api::Client::new(&config.base_url(), &config.identity_url(), &config.root_certificate());
     client.exchange_refresh_token(refresh_token)
 }
 
 async fn exchange_refresh_token_async(refresh_token: &str) -> Result<String> {
     let config = crate::config::Config::load_async().await?;
     let client =
-        crate::api::Client::new(&config.base_url(), &config.identity_url());
+        crate::api::Client::new(&config.base_url(), &config.identity_url(), &config.root_certificate());
     client.exchange_refresh_token_async(refresh_token).await
 }
