@@ -134,7 +134,7 @@ impl Config {
 
     pub fn root_certificate(&self) -> String {
         self.root_certificate.clone().map_or_else(
-            || "null".to_string(),
+            || "".to_string(),
             |cert| cert,
         )
     }
