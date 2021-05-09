@@ -13,7 +13,7 @@ cd rbw
 cargo install rbw --path .
 ```
 
-Finally add `$HOME/.cargo/bin` to your `PATH`. Make sure you have [`pinentry`](https://www.gnupg.org/related_software/pinentry/index.en.html) program is installed.
+Finally add `$HOME/.cargo/bin` to your `PATH`. Make sure you have [`pinentry`](https://www.gnupg.org/related_software/pinentry/index.en.html) program installed.
 
 ## Convert certificate.crt to certificate.der
 
