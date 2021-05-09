@@ -23,7 +23,20 @@ openssl x509 -outform der -in self-signed-ca-cert.crt -out self-signed-ca-cert.d
 
 ## Configuration
 
-Configuration options are set using the `rbw config` command. Available configuration options:
+Example configuration located in `$HOME/.config/rbw/config.json`:
+
+```json
+{
+  "email": "bitwarden@local",
+  "base_url": "https://bitwarden.local:8080",
+  "identity_url": null,
+  "lock_timeout": 3600,
+  "pinentry": "pinentry",
+  "root_certificate": "/home/arch/.certs/self-signed-ca-cert.der"
+}
+```
+
+Configuration options can be set using the `rbw config set [KEY] [VALUE]` command. Available configuration options:
 
 - `email`: The email address to use as the account name when logging into the Bitwarden server. Required.
 - `base_url`: The URL of the Bitwarden server to use. Defaults to the official server at `https://api.bitwarden.com/` if unset.
