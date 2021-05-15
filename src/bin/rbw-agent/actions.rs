@@ -1,4 +1,6 @@
 use anyhow::Context as _;
+use std::env;
+use std::path::PathBuf;
 
 pub async fn login(
     sock: &mut crate::sock::Sock,
@@ -536,7 +538,17 @@ async fn config_base_url() -> anyhow::Result<String> {
     Ok(config.base_url())
 }
 
+fn get_home_dir() -> PathBuf {
+    #[allow(deprecated)]
+    let dir: PathBuf = match env::home_dir() {
+        Some(path) => PathBuf::from(path),
+        None => PathBuf::from(""),
+    };
+    dir
+}
+
 async fn config_pinentry() -> anyhow::Result<String> {
+    let home_path: PathBuf = get_home_dir();
     let config = rbw::config::Config::load_async().await?;
-    Ok(config.pinentry)
+    Ok(config.pinentry.replace("$HOME", home_path.to_str().unwrap()))
 }

@@ -1,4 +1,6 @@
 use crate::prelude::*;
+use std::env;
+use std::path::PathBuf;
 
 use std::io::{Read as _, Write as _};
 use tokio::io::AsyncReadExt as _;
@@ -132,10 +134,20 @@ impl Config {
         )
     }
 
+    fn get_home_dir() -> PathBuf {
+        #[allow(deprecated)]
+        let dir: PathBuf = match env::home_dir() {
+            Some(path) => PathBuf::from(path),
+            None => PathBuf::from(""),
+        };
+        dir
+    }
+
     pub fn root_certificate(&self) -> String {
+        let home_path: PathBuf = Self::get_home_dir();
         self.root_certificate.clone().map_or_else(
             || "".to_string(),
-            |cert| cert,
+            |cert| cert.replace("$HOME", home_path.to_str().unwrap()),
         )
     }
 
